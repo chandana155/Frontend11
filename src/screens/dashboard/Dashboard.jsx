@@ -1398,15 +1398,6 @@ function Dashboard() {
       return false;
     };
 
-    // Search in all floors
-    if (allAreasFromAllFloors && allAreasFromAllFloors.length > 0) {
-      for (const floor of allAreasFromAllFloors) {
-        if (floor.tree && floor.tree.length > 0) {
-          findGroupInTree(floor.tree, floor.name || floor.id);
-        }
-      }
-    }
-
     return groupAreas;
   };
 

@@ -973,7 +973,7 @@ const HeatMap = () => {
               return updated;
             });
           } else {
-            console.warn('Scene details not found or invalid:', sceneDetailsResult);
+            console.warn('Scene details not found or invalid');
           }
         })
         .catch(error => {

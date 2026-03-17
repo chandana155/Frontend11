@@ -1126,7 +1126,7 @@ export const downloadEnergySavings = createAsyncThunk(
 
 export const downloadPeakMinConsumption = createAsyncThunk(
   'dashboard/downloadPeakMinConsumption',
-  async ({ areaIds, floorIds, timeRange, startDate, endDate }, { rejectWithValue }) => {
+  async ({ areaIds, floorIds, timeRange, startDate, endDate, isNavigating = false }, { rejectWithValue }) => {
     try {
       const params = new URLSearchParams();
       // CORRECT LOGIC: If floor is selected, send ONLY floorIds, NOT areaIds

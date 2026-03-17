@@ -923,8 +923,10 @@ function ScheduleComponent() {
                               } else if (event.is_active !== undefined) {
                                 isEventEnabled = event.is_active;
                               } else {
-                                // For preconfigured schedules, check the status array
-                                const st = status.find(s => String(s.event_id) === String(eventIdForStatus));
+                                // For preconfigured schedules, check the status array from the event itself (if available)
+                                const st = Array.isArray(event.status)
+                                  ? event.status.find(s => String(s.event_id) === String(eventIdForStatus))
+                                  : null;
                                 isEventEnabled = st ? st.EnableState === 'Enabled' : false;
                               }
                               
