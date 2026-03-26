@@ -17,6 +17,7 @@ import alertsReducer from './slice/dashboard/alertsSlice'
 import sensorsReducer from './slice/sensors/sensorsSlice'
 import modulesReducer from './slice/modules/modulesSlice'
 import unifiedEnergyReducer from './slice/dashboard/unifiedEnergySlice'
+import alertsDisplayReducer from './slice/settingsslice/alerts/alertsDisplaySlice'
 
 export const store = configureStore({
   reducer: {
@@ -37,6 +38,7 @@ export const store = configureStore({
     alerts: alertsReducer,
     sensors: sensorsReducer,
     modules: modulesReducer,
+    alertsDisplay: alertsDisplayReducer,
 
   },
 });

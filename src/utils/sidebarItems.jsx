@@ -9,6 +9,7 @@ export const SidebarItems = [
   "Floor",
   "Manage Sensors",
   "Manage Modules",
+  "Alerts",
   "Help",
 ];
 
@@ -19,11 +20,12 @@ export const getVisibleSidebarItems = (role, userProfile = null) => {
     return SidebarItems.filter((i) => i !== 'Manage Sensors' && i !== 'Manage Modules');
   } else if (role === 'Admin') {
     // Admin can see Home, Theme, Manage Area Groups, Area Size & Load, Email Server, Users
-    // Cannot see: Rename Widget, Floor, Help, Manage Sensors, Manage Modules
+    // Cannot see: Rename Widget, Floor, Help, Manage Sensors, Manage Modules, Alerts
     return SidebarItems.filter((i) => 
       i !== 'Rename Widget' && 
       i !== 'Floor' && 
       i !== 'Help' &&
+      i !== 'Alerts' &&
       i !== 'Manage Sensors' &&
       i !== 'Manage Modules'
     );
@@ -34,7 +36,7 @@ export const getVisibleSidebarItems = (role, userProfile = null) => {
     
     if (hasMonitorControlEdit) {
       // Operator-Monitor-Control-and-Edit: Can see Manage Area Groups, Area Size & Load, Users
-      // Hidden: Home, Theme, Rename Widget, Email Server, Floor, Help, Manage Sensors, Manage Modules
+      // Hidden: Home, Theme, Rename Widget, Email Server, Floor, Help, Manage Sensors, Manage Modules, Alerts
       return SidebarItems.filter((i) => 
         i !== 'Home' && 
         i !== 'Theme' && 
@@ -42,12 +44,13 @@ export const getVisibleSidebarItems = (role, userProfile = null) => {
         i !== 'Email Server' && 
         i !== 'Floor' && 
         i !== 'Help' &&
+        i !== 'Alerts' &&
         i !== 'Manage Sensors' &&
         i !== 'Manage Modules'
       );
     } else {
       // Other Operators: Can only see Manage Area Groups, Area Size & Load, Users
-      // Hidden: Home, Theme, Rename Widget, Email Server, Floor, Help, Manage Sensors, Manage Modules
+      // Hidden: Home, Theme, Rename Widget, Email Server, Floor, Help, Manage Sensors, Manage Modules, Alerts
       return SidebarItems.filter((i) => 
         i !== 'Home' && 
         i !== 'Theme' && 
@@ -55,13 +58,14 @@ export const getVisibleSidebarItems = (role, userProfile = null) => {
         i !== 'Email Server' && 
         i !== 'Floor' && 
         i !== 'Help' &&
+        i !== 'Alerts' &&
         i !== 'Manage Sensors' &&
         i !== 'Manage Modules'
       );
     }
   } else {
     // Default: Operator (any type) can only see restricted items
-    // Hidden: Home, Theme, Rename Widget, Email Server, Floor, Help, Manage Sensors, Manage Modules
+    // Hidden: Home, Theme, Rename Widget, Email Server, Floor, Help, Manage Sensors, Manage Modules, Alerts
     return SidebarItems.filter((i) => 
       i !== 'Home' && 
       i !== 'Theme' && 
@@ -69,6 +73,7 @@ export const getVisibleSidebarItems = (role, userProfile = null) => {
       i !== 'Email Server' && 
       i !== 'Floor' && 
       i !== 'Help' &&
+      i !== 'Alerts' &&
       i !== 'Manage Sensors' &&
       i !== 'Manage Modules'
     );

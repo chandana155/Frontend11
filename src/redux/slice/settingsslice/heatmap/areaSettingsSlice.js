@@ -159,6 +159,34 @@ export const editScene = createAsyncThunk(
   }
 );
 
+// Fetch tuning settings (zone-wise trims) for a given area
+export const fetchTunningSettings = createAsyncThunk(
+  'areaSettings/fetchTunningSettings',
+  async (areaId, { rejectWithValue }) => {
+    try {
+      const res = await BaseUrl.get('/area/tunning_settings', {
+        params: { area_id: Number(areaId) },
+      });
+      return res.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data || err.message || 'Failed to fetch tuning settings');
+    }
+  }
+);
+
+// Update processor tunings for one zone (POST supports partial trim updates)
+export const updateZoneTuning = createAsyncThunk(
+  'areaSettings/updateZoneTuning',
+  async (payload, { rejectWithValue }) => {
+    try {
+      const res = await BaseUrl.post('/area/zone_tuning_update', payload);
+      return res.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data || err.message || 'Failed to update zone tuning');
+    }
+  }
+);
+
 const initialMockData = {
   locked: false,
   scenes: [
@@ -206,6 +234,12 @@ const areaSettingsSlice = createSlice({
     sceneStatus: [],
     sceneStatusLoading: false,
     editSceneLoading: false,
+
+    // Zone-wise tuning settings (trims)
+    tunningSettings: null,
+    tunningSettingsLoading: false,
+    zoneTuningUpdateLoading: false,
+    zoneTuningUpdateError: null,
   },
   reducers: {},
   extraReducers: (builder) => {
@@ -297,6 +331,33 @@ const areaSettingsSlice = createSlice({
       .addCase(editScene.rejected, (state) => {
         state.editSceneLoading = false;
       });
+
+    builder
+      .addCase(fetchTunningSettings.pending, (state) => {
+        state.tunningSettingsLoading = true;
+        state.zoneTuningUpdateError = null;
+        state.tunningSettings = null;
+      })
+      .addCase(fetchTunningSettings.fulfilled, (state, action) => {
+        state.tunningSettingsLoading = false;
+        state.tunningSettings = action.payload || null;
+      })
+      .addCase(fetchTunningSettings.rejected, (state, action) => {
+        state.tunningSettingsLoading = false;
+        state.zoneTuningUpdateError = action.payload || 'Error fetching tuning settings';
+        state.tunningSettings = null;
+      })
+      .addCase(updateZoneTuning.pending, (state) => {
+        state.zoneTuningUpdateLoading = true;
+        state.zoneTuningUpdateError = null;
+      })
+      .addCase(updateZoneTuning.fulfilled, (state) => {
+        state.zoneTuningUpdateLoading = false;
+      })
+      .addCase(updateZoneTuning.rejected, (state, action) => {
+        state.zoneTuningUpdateLoading = false;
+        state.zoneTuningUpdateError = action.payload || 'Error updating zone tuning';
+      });
   },
 });
 
@@ -346,6 +407,13 @@ export const selectSceneStatus = createSelector(
 );
 
 export const selectEditSceneLoading = (state) => state.areaSettings.editSceneLoading;
+
+export const selectTunningSettings = (state) => state?.areaSettings?.tunningSettings ?? null;
+export const selectTunningSettingsLoading = (state) => state?.areaSettings?.tunningSettingsLoading ?? false;
+export const selectZoneTuningUpdateLoading = (state) => state?.areaSettings?.zoneTuningUpdateLoading ?? false;
+export const selectZoneTuningUpdateError = (state) => state?.areaSettings?.zoneTuningUpdateError ?? null;
+
+export const selectTunningZones = (state) => state?.areaSettings?.tunningSettings?.zones ?? [];
 
 export const selectHasKeypad = (state) => {
   const devices = state?.areaSettings?.data?.devices || [];
