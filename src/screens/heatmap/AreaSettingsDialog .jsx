@@ -21,11 +21,24 @@ import {
   selectAreaScenes,
   selectSceneStatus,
   selectEditSceneLoading,
+  fetchTunningSettings,
+  updateZoneTuning,
+  selectTunningZones,
+  selectTunningSettingsLoading,
+  selectZoneTuningUpdateLoading,
 } from "../../redux/slice/settingsslice/heatmap/areaSettingsSlice";
 import { fetchAreaStatus, updateAreaScene, selectAreaStatus } from "../../redux/slice/settingsslice/heatmap/HeatmapSlice";
 import { useMediaQuery, useTheme } from "@mui/material";
 import { selectApplicationTheme } from "../../redux/slice/theme/themeSlice";
 import { BaseUrl } from "../../BaseUrl";
+import Swal from "sweetalert2";
+
+/** High End trim allowed range (inclusive) for tuning save */
+const HIGH_END_TRIM_MIN = 56;
+const HIGH_END_TRIM_MAX = 100;
+
+/** Must sit above app chrome: TopbarComponent outer Box uses z-index 10002; mobile Drawer uses 10003. MUI Dialog defaults to ~1300. */
+const AREA_SETTINGS_DIALOG_Z_INDEX = 11000;
 
 // Helper functions for zone type detection
 const isWhitening = (type) => ['whitening', 'white tune', 'whitetune', 'white_tune', 'White Tune', 'WhiteTune'].includes((type || '').toLowerCase());
@@ -35,6 +48,10 @@ const isSwitched = (type) => (type || '').toLowerCase() === 'switched';
 export default function AreaSettingsDialog({ open, onClose, areaId, canUpdateAreaStatus, canModifyDeviceSettings, canViewAreaSettings, canEditScene, currentUserRole, userProfile, selectedFloorId }) {
   const dispatch = useDispatch();
   const theme = useTheme();
+  const isSuperAdmin = typeof currentUserRole === 'string' && (
+    currentUserRole.toLowerCase().trim() === 'superadmin' ||
+    currentUserRole.toLowerCase().trim() === 'super admin'
+  );
   
   // Responsive breakpoints
   const isMobile = useMediaQuery(theme.breakpoints.down('sm')); // < 600px
@@ -53,6 +70,9 @@ export default function AreaSettingsDialog({ open, onClose, areaId, canUpdateAre
   const areaScenes = useSelector(selectAreaScenes);
   const { details: sceneDetails, loading: sceneStatusLoading } = useSelector(selectSceneStatus);
   const editSceneLoading = useSelector(selectEditSceneLoading);
+  const tuningZones = useSelector(selectTunningZones);
+  const tunningSettingsLoading = useSelector(selectTunningSettingsLoading);
+  const zoneTuningUpdateLoading = useSelector(selectZoneTuningUpdateLoading);
   const areaStatus = useSelector(selectAreaStatus); // Get area status to access zones
   const appTheme = useSelector(selectApplicationTheme);
   const buttonColor = appTheme?.application_theme?.button || '#232323';
@@ -65,6 +85,27 @@ export default function AreaSettingsDialog({ open, onClose, areaId, canUpdateAre
   const [pendingOccupancy, setPendingOccupancy] = useState(false);
   const [justAppliedScene, setJustAppliedScene] = useState(false); // Flag to prevent re-initialization after save
 
+  // Tuning Settings (superadmin only): one selected zone + High End trim only
+  const [selectedTuningZoneId, setSelectedTuningZoneId] = useState(null);
+  const [draftHighEndTrim, setDraftHighEndTrim] = useState('');
+
+  const sanitizeTrimInput = (value) => {
+    const s = value === null || value === undefined ? '' : String(value);
+    if (s === '') return '';
+    const cleaned = s.replace(/[^\d.]/g, '');
+    const parts = cleaned.split('.');
+    if (parts.length <= 2) return cleaned;
+    return `${parts[0]}.${parts.slice(1).join('')}`;
+  };
+
+  const trimmedHighEndDraft = String(draftHighEndTrim ?? '').trim();
+  const showHighEndRangeWarning =
+    trimmedHighEndDraft.length >= 2 &&
+    (() => {
+      const n = Number(trimmedHighEndDraft);
+      return Number.isNaN(n) || n < HIGH_END_TRIM_MIN || n > HIGH_END_TRIM_MAX;
+    })();
+
 
 
   useEffect(() => {
@@ -73,10 +114,35 @@ export default function AreaSettingsDialog({ open, onClose, areaId, canUpdateAre
       dispatch(fetchOccupancyMode(areaId));
       dispatch(fetchAreaScenes(areaId));
       dispatch(fetchAreaStatus(areaId)); // Fetch area status to get zones
+
+      // Reset tuning UI state on open/area change
+      setSelectedTuningZoneId(null);
+      setDraftHighEndTrim('');
+
+      if (isSuperAdmin) {
+        dispatch(fetchTunningSettings(areaId));
+      }
+
       setSelectedScene(null);
       setSceneZoneValues({});
     }
-  }, [open, areaId, dispatch]);
+  }, [open, areaId, dispatch, isSuperAdmin]);
+
+  // Pick a default zone once tuning data is loaded
+  useEffect(() => {
+    if (!open || !isSuperAdmin) return;
+    if (tuningZones && tuningZones.length > 0) {
+      setSelectedTuningZoneId((prev) => prev ?? tuningZones[0].zone_id);
+    }
+  }, [open, isSuperAdmin, tuningZones]);
+
+  // Populate drafts when the user selects a zone
+  useEffect(() => {
+    if (!open || !isSuperAdmin) return;
+    const zone = tuningZones?.find((z) => Number(z.zone_id) === Number(selectedTuningZoneId));
+    if (!zone) return;
+    setDraftHighEndTrim(zone.high_end_trim ?? '');
+  }, [open, isSuperAdmin, tuningZones, selectedTuningZoneId]);
 
   // Fetch and store area zones when area status is available
   useEffect(() => {
@@ -820,6 +886,45 @@ export default function AreaSettingsDialog({ open, onClose, areaId, canUpdateAre
     }
   };
 
+  const handleSaveTuning = async () => {
+    if (!isSuperAdmin) return;
+    if (!selectedTuningZoneId) return;
+
+    const trimmed = String(draftHighEndTrim ?? '').trim();
+    if (trimmed === '') {
+      await Swal.fire({
+        icon: 'warning',
+        title: 'High End trim required',
+        text: 'Please enter a value between ' + HIGH_END_TRIM_MIN + ' and ' + HIGH_END_TRIM_MAX + '.',
+      });
+      return;
+    }
+    const high = Number(trimmed);
+    if (Number.isNaN(high)) {
+      await Swal.fire({
+        icon: 'warning',
+        title: 'Invalid number',
+        text: 'Please enter a valid number for High End trim.',
+      });
+      return;
+    }
+    if (high < HIGH_END_TRIM_MIN || high > HIGH_END_TRIM_MAX) {
+      await Swal.fire({
+        icon: 'warning',
+        title: 'Out of range',
+        text: `High End trim must be between ${HIGH_END_TRIM_MIN} and ${HIGH_END_TRIM_MAX} (inclusive).`,
+      });
+      return;
+    }
+
+    try {
+      await dispatch(updateZoneTuning({ zone_id: selectedTuningZoneId, HighEndTrim: high })).unwrap();
+      await dispatch(fetchTunningSettings(areaId)).unwrap();
+    } catch (err) {
+      console.error('Error saving tuning settings:', err);
+    }
+  };
+
   if (!open) return null;
 
   return (
@@ -829,6 +934,7 @@ export default function AreaSettingsDialog({ open, onClose, areaId, canUpdateAre
       maxWidth="xs" 
       fullWidth 
       disableEscapeKeyDown={true}
+      sx={{ zIndex: AREA_SETTINGS_DIALOG_Z_INDEX }}
       BackdropProps={{
         sx: {
           backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -1134,6 +1240,131 @@ export default function AreaSettingsDialog({ open, onClose, areaId, canUpdateAre
                 </Box>
               )}
             </Box>
+
+            {/* Tuning Settings (superadmin only): one selected zone + trim inputs */}
+            {isSuperAdmin && (
+              <Box sx={{ bgcolor: "#807864", borderRadius: "4px", p: "12px 12px", mt: 1 }}>
+                <Typography fontWeight={700} fontSize={15} mb={1} sx={{ color: "#fff" }}>
+                  Tuning Settings
+                </Typography>
+
+                {tunningSettingsLoading ? (
+                  <Box display="flex" justifyContent="center" alignItems="center" py={1}>
+                    <CircularProgress size={20} />
+                  </Box>
+                ) : (
+                  <>
+                    <Select
+                      value={selectedTuningZoneId ?? ""}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        setSelectedTuningZoneId(v ? Number(v) : null);
+                      }}
+                      displayEmpty
+                      disabled={!tuningZones || tuningZones.length === 0 || zoneTuningUpdateLoading}
+                      MenuProps={{
+                        // Keep the menu within the dialog stacking context and ensure it renders above
+                        // the dialog/topbar z-index overrides used in this app.
+                        disablePortal: true,
+                        PaperProps: {
+                          sx: {
+                            zIndex: AREA_SETTINGS_DIALOG_Z_INDEX + 1,
+                            minWidth: 260,
+                          },
+                        },
+                      }}
+                      input={
+                        <OutlinedInput
+                          sx={{
+                            fontSize: 14,
+                            height: 36,
+                            color: "#232323",
+                            bgcolor: "#fff",
+                            borderRadius: "2px",
+                            pl: 2,
+                          }}
+                        />
+                      }
+                      sx={{
+                        width: "100%",
+                        fontSize: 14,
+                        height: 36,
+                        color: "#232323",
+                        bgcolor: "#fff",
+                        borderRadius: "2px",
+                        mb: 1.5,
+                        "& .MuiSelect-icon": { color: "#232323" },
+                        "& .MuiOutlinedInput-notchedOutline": { borderColor: "#ddd" },
+                      }}
+                      renderValue={(selected) => {
+                        if (!selected) {
+                          return <span style={{ color: "#aaa" }}>Select Zone</span>;
+                        }
+                        const zone = tuningZones.find((z) => Number(z.zone_id) === Number(selected));
+                        if (!zone) return "";
+                        return zone.zone_name || "";
+                      }}
+                    >
+                      <MenuItem disabled value="">
+                        <span style={{ color: "#aaa" }}>Select Zone</span>
+                      </MenuItem>
+                      {tuningZones.map((zone) => (
+                        <MenuItem key={zone.zone_id} value={Number(zone.zone_id)}>
+                          {zone.zone_name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+                      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                        <Typography fontWeight={700} fontSize={14} sx={{ color: "#fff" }}>
+                          High End
+                        </Typography>
+                        <OutlinedInput
+                          value={draftHighEndTrim}
+                          disabled={!selectedTuningZoneId || zoneTuningUpdateLoading}
+                          onChange={(e) => setDraftHighEndTrim(sanitizeTrimInput(e.target.value))}
+                          inputProps={{ inputMode: "decimal", min: HIGH_END_TRIM_MIN, max: HIGH_END_TRIM_MAX }}
+                          sx={{
+                            width: 95,
+                            bgcolor: "#fff",
+                            borderRadius: 1,
+                            "& .MuiOutlinedInput-notchedOutline": { borderColor: "#ddd" },
+                            "& input": { textAlign: "center", fontSize: 13, py: 0.6 },
+                          }}
+                        />
+                      </Box>
+                      {showHighEndRangeWarning && (
+                        <Typography fontSize={11} sx={{ color: "#ffcdd2", px: 0.25 }}>
+                          Value must be between {HIGH_END_TRIM_MIN} and {HIGH_END_TRIM_MAX}.
+                        </Typography>
+                      )}
+                    </Box>
+
+                    <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 1.5 }}>
+                      <Button
+                        variant="contained"
+                        sx={{
+                          borderRadius: 1,
+                          fontWeight: 700,
+                          bgcolor: zoneTuningUpdateLoading ? "#999" : buttonColor,
+                          color: "#fff",
+                          px: 2,
+                          py: 0.2,
+                          fontSize: 12,
+                          boxShadow: 0,
+                          minWidth: 0,
+                        }}
+                        onClick={handleSaveTuning}
+                        disabled={zoneTuningUpdateLoading || !selectedTuningZoneId}
+                      >
+                        {zoneTuningUpdateLoading ? "Saving..." : "Save"}
+                      </Button>
+                    </Box>
+                  </>
+                )}
+              </Box>
+            )}
           </>
         )}
       </DialogContent>

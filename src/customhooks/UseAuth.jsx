@@ -72,6 +72,7 @@ export const getVisibleSidebarItemsWithPaths = (role, userProfile = null) => {
         "Floor",
         "Manage Sensors",
         "Manage Modules",
+        "Alerts",
         "Help",
     ];
 
@@ -86,6 +87,7 @@ export const getVisibleSidebarItemsWithPaths = (role, userProfile = null) => {
         "Floor": "/floor",
         "Manage Sensors": "/manage-sensors",
         "Manage Modules": "/manage-modules",
+        "Alerts": "/alerts",
         "Help": "/create-help/",
     };
 
@@ -103,11 +105,12 @@ export const getVisibleSidebarItemsWithPaths = (role, userProfile = null) => {
         return result;
     } else if (role === 'Admin') {
         // Admin can see Home, Theme, Manage Area Groups, Area Size & Load, Email Server, Users
-        // Cannot see: Rename Widget, Floor, Help, Manage Sensors, Manage Modules
+        // Cannot see: Rename Widget, Floor, Help, Manage Sensors, Manage Modules, Alerts
         const adminItems = allSidebarItems.filter(item => 
             item !== 'Rename Widget' && 
             item !== 'Floor' && 
             item !== 'Help' &&
+            item !== 'Alerts' &&
             item !== 'Manage Sensors' &&
             item !== 'Manage Modules'
         );
@@ -123,7 +126,7 @@ export const getVisibleSidebarItemsWithPaths = (role, userProfile = null) => {
         
         if (hasMonitorControlEdit) {
             // Operator-Monitor-Control-and-Edit: Can see Manage Area Groups, Area Size & Load, Users
-            // Hidden: Home, Theme, Rename Widget, Email Server, Floor, Help, Manage Sensors, Manage Modules
+            // Hidden: Home, Theme, Rename Widget, Email Server, Floor, Help, Manage Sensors, Manage Modules, Alerts
             const operatorItems = allSidebarItems.filter(item => 
                 item !== 'Home' && 
                 item !== 'Theme' && 
@@ -131,6 +134,7 @@ export const getVisibleSidebarItemsWithPaths = (role, userProfile = null) => {
                 item !== 'Email Server' && 
                 item !== 'Floor' && 
                 item !== 'Help' &&
+                item !== 'Alerts' &&
                 item !== 'Manage Sensors' &&
                 item !== 'Manage Modules'
             );
@@ -141,7 +145,7 @@ export const getVisibleSidebarItemsWithPaths = (role, userProfile = null) => {
             return result;
         } else {
             // Other Operators: Can only see Manage Area Groups, Area Size & Load, Users
-            // Hidden: Home, Theme, Rename Widget, Email Server, Floor, Help, Manage Sensors, Manage Modules
+            // Hidden: Home, Theme, Rename Widget, Email Server, Floor, Help, Manage Sensors, Manage Modules, Alerts
             const operatorItems = allSidebarItems.filter(item => 
                 item !== 'Home' && 
                 item !== 'Theme' && 
@@ -149,6 +153,7 @@ export const getVisibleSidebarItemsWithPaths = (role, userProfile = null) => {
                 item !== 'Email Server' && 
                 item !== 'Floor' && 
                 item !== 'Help' &&
+                item !== 'Alerts' &&
                 item !== 'Manage Sensors' &&
                 item !== 'Manage Modules'
             );
@@ -161,7 +166,7 @@ export const getVisibleSidebarItemsWithPaths = (role, userProfile = null) => {
     } else {
         // Default: Operator (any type) can only see restricted items based on RBAC definitions
         // From image: Operators can see Manage Area Groups, Area Size & Load, Users, Help
-        // Hidden: Home, Theme, Rename Widget, Email Server, Floor, Manage Sensors, Manage Modules
+        // Hidden: Home, Theme, Rename Widget, Email Server, Floor, Manage Sensors, Manage Modules, Alerts
         const operatorItems = allSidebarItems.filter(item => 
             item !== 'Home' && 
             item !== 'Theme' && 
@@ -169,6 +174,7 @@ export const getVisibleSidebarItemsWithPaths = (role, userProfile = null) => {
             item !== 'Email Server' && 
             item !== 'Floor' &&
             item !== 'Help' &&
+            item !== 'Alerts' &&
             item !== 'Manage Sensors' &&
             item !== 'Manage Modules'
         );

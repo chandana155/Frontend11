@@ -48,6 +48,7 @@ import AreaCalculationPage from './screens/settings/floor/AreaCalculationPage';
 import RenameWidgetDetails from './screens/settings/renameWidget/RenameWidget'
 import ManageSensors from './screens/settings/sensors/ManageSensors'
 import ManageModules from './screens/settings/modules/ManageModules'
+import AlertsComponent from './screens/settings/alerts/AlertsComponent'
 
 
 const HeatMap = lazy(() => import('./screens/heatmap/HeatMap'));
@@ -142,6 +143,7 @@ const App = () => {
             <Route path="/rename-widget/" element={<RenameWidgetDetails />} />
             <Route path="/manage-sensors" element={<AuthGuard allowedRoles={["Superadmin"]}><ManageSensors /></AuthGuard>} />
             <Route path="/manage-modules" element={<AuthGuard allowedRoles={["Superadmin"]}><ManageModules /></AuthGuard>} />
+            <Route path="/alerts" element={<AuthGuard allowedRoles={["Superadmin"]}><AlertsComponent /></AuthGuard>} />
 
 
           </Route>

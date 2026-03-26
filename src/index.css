@@ -1,5 +1,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
 
+/* SweetAlert2 default z-index (~1060) sits below the app top bar (10002); keep alerts above chrome */
+.swal2-container {
+  z-index: 11000 !important;
+}
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
