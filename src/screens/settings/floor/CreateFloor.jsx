@@ -32,7 +32,7 @@ import CancelIcon from '@mui/icons-material/Cancel';
 
 import { ConfirmDialog } from '../../../utils/FeedbackUI';
 
-import {selectApplicationTheme } from "../../../redux/slice/theme/themeSlice";
+import { selectApplicationTheme } from "../../../redux/slice/theme/themeSlice";
 
 
 const VisuallyHiddenInput = styled('input')({
@@ -92,9 +92,11 @@ export default function CreateFloor() {
   const [areaUploadSuccess, setAreaUploadSuccess] = useState({});
   const [areaUploadMsg, setAreaUploadMsg] = useState({});
 
+  const [saving, setSaving] = useState(false);
+
   const [processorAreaMap, setProcessorAreaMap] = useState({}); // { [processorId]: [areaId, ...] }
   const pollingRef = useRef();
-  
+
   // Add confirmation dialog state
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [processorToDelete, setProcessorToDelete] = useState(null);
@@ -104,7 +106,7 @@ export default function CreateFloor() {
     setShowCreateError(false);
     setErrorMessage('');
   };
-  
+
   const showErrorSnackbar = (message) => {
     setErrorMessage(message);
     setShowCreateError(true);
@@ -229,67 +231,271 @@ export default function CreateFloor() {
     }
   };
 
+  // const handleAreaCoordinatesUpload = async (e, processorId) => {
+  //   const file = e.target.files[0];
+  //   if (file) {
+  //     setUploadStatuses(prev => ({ ...prev, [processorId]: 'uploading' }));
+  //     try {
+  //       const result = await dispatch(uploadAreaCoordinates({ processorId, file })).unwrap();
+  //       setUploadStatuses(prev => ({ ...prev, [processorId]: 'success' }));
+  //       setProcessorAreaMap(prev => ({
+  //         ...prev,
+  //         [processorId]: result?.area_id || []
+  //       }));
+  //       setAreaUploadSuccess(prev => ({ ...prev, [processorId]: true }));
+  //       setAreaUploadMsg(prev => ({
+  //         ...prev,
+  //         [processorId]: Array.isArray(result.area_id)
+  //           ? `Area coordinates uploaded! Area IDs: ${result.area_id.join(', ')}`
+  //           : 'Area coordinates uploaded! (No area IDs returned)'
+  //       }));
+  //       setShowUploadSuccess(true);
+  //       dispatch(fetchProcessors());
+  //     } catch (error) {
+  //       setUploadStatuses(prev => ({ ...prev, [processorId]: 'failure' }));
+  //       setAreaUploadSuccess(prev => ({ ...prev, [processorId]: false }));
+  //       setAreaUploadMsg(prev => ({
+  //         ...prev,
+  //         [processorId]: 'Failed to upload area coordinates.'
+  //       }));
+  //     }
+  //   }
+  //   e.target.value = '';
+  // };
+
   const handleAreaCoordinatesUpload = async (e, processorId) => {
     const file = e.target.files[0];
     if (file) {
       setUploadStatuses(prev => ({ ...prev, [processorId]: 'uploading' }));
+
       try {
         const result = await dispatch(uploadAreaCoordinates({ processorId, file })).unwrap();
+
+        console.log("UPLOAD RESULT:", result); // ✅ debug
+
+        const areaIds = result?.area_id;
+
+        // ✅ IMPORTANT FIX: validate response before success
+        if (!Array.isArray(areaIds) || areaIds.length === 0) {
+          throw new Error("No valid area IDs returned");
+        }
+
         setUploadStatuses(prev => ({ ...prev, [processorId]: 'success' }));
+
         setProcessorAreaMap(prev => ({
           ...prev,
-          [processorId]: result?.area_id || []
+          [processorId]: areaIds
         }));
+
         setAreaUploadSuccess(prev => ({ ...prev, [processorId]: true }));
+
         setAreaUploadMsg(prev => ({
           ...prev,
-          [processorId]: Array.isArray(result.area_id)
-            ? `Area coordinates uploaded! Area IDs: ${result.area_id.join(', ')}`
-            : 'Area coordinates uploaded! (No area IDs returned)'
+          [processorId]: `Area coordinates uploaded! Area IDs: ${areaIds.join(', ')}`
         }));
+
         setShowUploadSuccess(true);
+
         dispatch(fetchProcessors());
+
       } catch (error) {
+        console.error("Upload error:", error);
+
         setUploadStatuses(prev => ({ ...prev, [processorId]: 'failure' }));
+
         setAreaUploadSuccess(prev => ({ ...prev, [processorId]: false }));
+
         setAreaUploadMsg(prev => ({
           ...prev,
           [processorId]: 'Failed to upload area coordinates.'
         }));
+
+        setShowUploadFailure(true); // optional but useful
       }
     }
+
     e.target.value = '';
   };
 
+  // const handleSave = async () => {
+  //   setShowCreateError(false);
+  //   setErrorMessage('');
+
+  //   // Validation
+  //   if (!floorName.trim()) {
+  //     setErrorMessage('Floor name is required.');
+  //     setShowCreateError(true);
+  //     return;
+  //   }
+  //   if (!floorDocument) {
+  //     setErrorMessage('Floor document (PDF) is required.');
+  //     setShowCreateError(true);
+  //     return;
+  //   }
+  //   if (selectedProcessors.length === 0) {
+  //     setErrorMessage('Please select at least one processor.');
+  //     setShowCreateError(true);
+  //     return;
+  //   }
+  //   // Per-processor CSV validation
+  //   const missingCsv = selectedProcessors.some(proc => !processorAreaMap[proc.id] || processorAreaMap[proc.id].length === 0);
+  //   if (missingCsv) {
+  //     setErrorMessage('Please upload an area CSV for each processor.');
+  //     setShowCreateError(true);
+  //     return;
+  //   }
+
+  //   // Build processors array for payload
+  //   const processorsPayload = selectedProcessors.map(proc => ({
+  //     processor_id: proc.id,
+  //     area_ids: processorAreaMap[proc.id] || []
+  //   }));
+
+  //   const sendData = {
+  //     floor_name: floorName.trim(),
+  //     processors: processorsPayload
+  //   };
+
+  //   const formData = new FormData();
+  //   formData.append('json_data', JSON.stringify(sendData));
+  //   formData.append('floor_plan', floorDocument);
+
+  //   try {
+  //     await dispatch(createFloorWithAreas(formData)).unwrap();
+  //     setShowCreateSuccess(true);
+  //     setFloorName('');
+  //     setFloorDocument(null);
+  //     setDocumentObjectURL('');
+  //     dispatch(clearSelectedProcessors());
+  //     setUploadStatuses({});
+  //     dispatch(clearProcessorAreaIds());
+  //     setAreaUploadSuccess({});
+  //     setAreaUploadMsg({});
+  //     setProcessorAreaMap({}); // <-- FLUSH the global variable here!
+  //     dispatch(fetchFloors());
+  //     setTimeout(() => {
+  //       navigate('/floor');
+  //     }, 1500);
+  //   } catch (error) {
+  //     setErrorMessage(renderErrorMessage(error));
+  //     setShowCreateError(true);
+  //   }
+  // };
+
+  // const handleSave = async () => {
+  //   setShowCreateError(false);
+  //   setErrorMessage('');
+
+  //   // Validation
+  //   if (!floorName.trim()) {
+  //     setErrorMessage('Floor name is required.');
+  //     setShowCreateError(true);
+  //     return;
+  //   }
+
+  //   if (!floorDocument) {
+  //     setErrorMessage('Floor document (PDF) is required.');
+  //     setShowCreateError(true);
+  //     return;
+  //   }
+
+  //   if (selectedProcessors.length === 0) {
+  //     setErrorMessage('Please select at least one processor.');
+  //     setShowCreateError(true);
+  //     return;
+  //   }
+
+  //   const missingCsv = selectedProcessors.some(
+  //     proc => !processorAreaMap[proc.id] || processorAreaMap[proc.id].length === 0
+  //   );
+
+  //   if (missingCsv) {
+  //     setErrorMessage('Please upload an area CSV for each processor.');
+  //     setShowCreateError(true);
+  //     return;
+  //   }
+
+  //   const processorsPayload = selectedProcessors.map(proc => ({
+  //     processor_id: proc.id,
+  //     area_ids: processorAreaMap[proc.id] || []
+  //   }));
+
+  //   const sendData = {
+  //     floor_name: floorName.trim(),
+  //     processors: processorsPayload
+  //   };
+
+  //   const formData = new FormData();
+  //   formData.append('json_data', JSON.stringify(sendData));
+  //   formData.append('floor_plan', floorDocument);
+
+  //   try {
+  //     setSaving(true); // 🔥 START LOADING
+
+  //     await dispatch(createFloorWithAreas(formData)).unwrap();
+
+  //     setShowCreateSuccess(true);
+  //     setFloorName('');
+  //     setFloorDocument(null);
+  //     setDocumentObjectURL('');
+
+  //     dispatch(clearSelectedProcessors());
+  //     setUploadStatuses({});
+  //     dispatch(clearProcessorAreaIds());
+  //     setAreaUploadSuccess({});
+  //     setAreaUploadMsg({});
+  //     setProcessorAreaMap({});
+
+  //     dispatch(fetchFloors());
+
+  //     setTimeout(() => {
+  //       navigate('/floor');
+  //     }, 1500);
+
+  //   } catch (error) {
+  //     setErrorMessage(renderErrorMessage(error));
+  //     setShowCreateError(true);
+  //   } finally {
+  //     setSaving(false); // 🔥 STOP LOADING
+  //   }
+  // };
+
   const handleSave = async () => {
+    if (saving) return; // ✅ prevent double click
+
     setShowCreateError(false);
     setErrorMessage('');
 
-    // Validation
+    // ✅ VALIDATIONS
     if (!floorName.trim()) {
       setErrorMessage('Floor name is required.');
       setShowCreateError(true);
       return;
     }
+
     if (!floorDocument) {
       setErrorMessage('Floor document (PDF) is required.');
       setShowCreateError(true);
       return;
     }
+
     if (selectedProcessors.length === 0) {
       setErrorMessage('Please select at least one processor.');
       setShowCreateError(true);
       return;
     }
-    // Per-processor CSV validation
-    const missingCsv = selectedProcessors.some(proc => !processorAreaMap[proc.id] || processorAreaMap[proc.id].length === 0);
+
+    const missingCsv = selectedProcessors.some(
+      proc => !processorAreaMap[proc.id] || processorAreaMap[proc.id].length === 0
+    );
+
     if (missingCsv) {
       setErrorMessage('Please upload an area CSV for each processor.');
       setShowCreateError(true);
       return;
     }
 
-    // Build processors array for payload
+    // ✅ PAYLOAD
     const processorsPayload = selectedProcessors.map(proc => ({
       processor_id: proc.id,
       area_ids: processorAreaMap[proc.id] || []
@@ -305,24 +511,37 @@ export default function CreateFloor() {
     formData.append('floor_plan', floorDocument);
 
     try {
-      await dispatch(createFloorWithAreas(formData)).unwrap();
+      setSaving(true); // 🔥 ONLY Save controls this
+
+      await dispatch(createFloorWithAreas(formData)).unwrap(); // ✅ KEY
+
+      // ✅ SUCCESS
       setShowCreateSuccess(true);
+
       setFloorName('');
       setFloorDocument(null);
       setDocumentObjectURL('');
+
       dispatch(clearSelectedProcessors());
       setUploadStatuses({});
       dispatch(clearProcessorAreaIds());
       setAreaUploadSuccess({});
       setAreaUploadMsg({});
-      setProcessorAreaMap({}); // <-- FLUSH the global variable here!
+      setProcessorAreaMap({});
+
       dispatch(fetchFloors());
+
       setTimeout(() => {
         navigate('/floor');
       }, 1500);
+
     } catch (error) {
+      // ❌ unwrap error
       setErrorMessage(renderErrorMessage(error));
       setShowCreateError(true);
+
+    } finally {
+      setSaving(false); // 🔥 ALWAYS stop
     }
   };
 
@@ -576,7 +795,7 @@ export default function CreateFloor() {
           >
             Cancel
           </Button>
-          <Button
+          {/* <Button
             variant="contained"
             onClick={handleSave}
             disabled={floorStatus === 'loading'}
@@ -591,6 +810,60 @@ export default function CreateFloor() {
             }}
           >
             {floorStatus === 'loading' ? <CircularProgress size={24} color="inherit" /> : 'Save'}
+          </Button> */}
+
+          {/* <Button
+            variant="contained"
+            onClick={handleSave}
+            disabled={saving || floorStatus === 'loading'}
+            sx={{
+              backgroundColor: buttonColor,
+              color: '#fff',
+              textTransform: 'none',
+              px: 3,
+              py: 1,
+              borderRadius: '8px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              '&:hover': { backgroundColor: '#444' }
+            }}
+          >
+            {(saving || floorStatus === 'loading') ? (
+              <>
+                <CircularProgress size={20} color="inherit" />
+                Saving...
+              </>
+            ) : (
+              'Save'
+            )}
+          </Button> */}
+
+          <Button
+            variant="contained"
+            onClick={handleSave}
+            disabled={saving}
+            sx={{
+              backgroundColor: buttonColor,
+              color: '#fff',
+              textTransform: 'none',
+              px: 3,
+              py: 1,
+              borderRadius: '8px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              '&:hover': { backgroundColor: '#444' }
+            }}
+          >
+            {saving ? (
+              <>
+                <CircularProgress size={20} color="inherit" />
+                Saving...
+              </>
+            ) : (
+              'Save'
+            )}
           </Button>
         </Grid>
       </Grid>
@@ -732,7 +1005,7 @@ export default function CreateFloor() {
       >
         <Alert
           onClose={handleCloseErrorSnackbar}
-        severity="error"
+          severity="error"
           sx={{
             backgroundColor: '#fff',
             color: '#000',

@@ -69,7 +69,7 @@ export const updateFloor = createAsyncThunk(
   'floors/updateFloor',
   async ({ floorId, formData }, { rejectWithValue }) => {
     try {
-      
+
       // Log all formData entries
       for (let [key, value] of formData.entries()) {
         if (value instanceof File) {
@@ -81,22 +81,22 @@ export const updateFloor = createAsyncThunk(
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
-      
-      return { 
-        id: parseInt(floorId), 
-        ...response.data 
+
+      return {
+        id: parseInt(floorId),
+        ...response.data
       };
     } catch (err) {
       console.error('=== UPDATE FLOOR ERROR ===');
       console.error('Error details:', err);
       console.error('Response data:', err.response?.data);
       console.error('Response status:', err.response?.status);
-      
-      const errorMessage = err.response?.data?.detail || 
-                          err.response?.data?.message || 
-                          err.message || 
-                          "Failed to update floor.";
-      
+
+      const errorMessage = err.response?.data?.detail ||
+        err.response?.data?.message ||
+        err.message ||
+        "Failed to update floor.";
+
       return rejectWithValue(errorMessage);
     }
   }
@@ -110,10 +110,10 @@ export const deleteFloor = createAsyncThunk(
       return floorId;
     } catch (err) {
       console.error('Delete floor error:', err);
-      const errorMessage = err.response?.data?.detail || 
-                          err.response?.data?.message || 
-                          err.message || 
-                          "Failed to delete floor.";
+      const errorMessage = err.response?.data?.detail ||
+        err.response?.data?.message ||
+        err.message ||
+        "Failed to delete floor.";
       return rejectWithValue(errorMessage);
     }
   }
@@ -346,9 +346,9 @@ const floorSlice = createSlice({
         state.status = 'succeeded';
         state.singleFloor = action.payload;
         state.error = null;
-        
+
         // Log the payload to see the structure
-        
+
         const API_URL = process.env.REACT_APP_API_URL || "";
         const rawPath = action.payload.floor_image || action.payload.floor_plan || "";
         if (rawPath) {
@@ -358,6 +358,25 @@ const floorSlice = createSlice({
         }
       })
       .addCase(fetchSingleFloor.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload || action.error.message;
+      })
+
+      // ✅ CREATE FLOOR WITH AREAS
+      .addCase(createFloorWithAreas.pending, (state) => {
+        state.status = 'loading';
+        state.error = null;
+      })
+      .addCase(createFloorWithAreas.fulfilled, (state, action) => {
+        state.status = 'succeeded';
+        state.error = null;
+
+        // optional: add new floor to list
+        if (action.payload) {
+          state.floors.push(action.payload);
+        }
+      })
+      .addCase(createFloorWithAreas.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.payload || action.error.message;
       })
