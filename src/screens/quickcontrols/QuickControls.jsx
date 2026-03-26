@@ -580,7 +580,7 @@ const QuickControls = () => {
               marginBottom: '8px',
               fontSize: '16px'
             }}>
-              ⚠️ Cannot Delete Quick Control
+              Cannot Delete Quick Control
             </div>
             <div style={{ 
               fontSize: '14px',

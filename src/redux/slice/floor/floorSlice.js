@@ -8,6 +8,10 @@ const initialState = {
   status: 'idle',
   error: null,
   selectedProcessors: JSON.parse(localStorage.getItem('selectedProcessors')) || [], // Load from localStorage
+  singleFloor: {},
+  leafData: {},
+  pdfUrl: null,
+  existingCalculatedAreas: null,
   lightStatus: null,
   occupancyStatus: null,
   energyStatus: null,
@@ -297,8 +301,6 @@ export const fetchExistingCalculatedAreas = createAsyncThunk(
 
 const floorSlice = createSlice({
   name: 'floor',
-  singleFloor: {},
-  leafData: {},
   initialState,
   reducers: {
     addSelectedProcessor: (state, action) => {
@@ -362,7 +364,7 @@ const floorSlice = createSlice({
         state.error = action.payload || action.error.message;
       })
 
-      // ✅ CREATE FLOOR WITH AREAS
+      // CREATE FLOOR WITH AREAS
       .addCase(createFloorWithAreas.pending, (state) => {
         state.status = 'loading';
         state.error = null;

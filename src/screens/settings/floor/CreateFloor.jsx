@@ -271,11 +271,9 @@ export default function CreateFloor() {
       try {
         const result = await dispatch(uploadAreaCoordinates({ processorId, file })).unwrap();
 
-        console.log("UPLOAD RESULT:", result); // ✅ debug
-
         const areaIds = result?.area_id;
 
-        // ✅ IMPORTANT FIX: validate response before success
+        // IMPORTANT FIX: validate response before success
         if (!Array.isArray(areaIds) || areaIds.length === 0) {
           throw new Error("No valid area IDs returned");
         }
@@ -430,7 +428,7 @@ export default function CreateFloor() {
   //   formData.append('floor_plan', floorDocument);
 
   //   try {
-  //     setSaving(true); // 🔥 START LOADING
+  //     setSaving(true); // START LOADING
 
   //     await dispatch(createFloorWithAreas(formData)).unwrap();
 
@@ -456,17 +454,17 @@ export default function CreateFloor() {
   //     setErrorMessage(renderErrorMessage(error));
   //     setShowCreateError(true);
   //   } finally {
-  //     setSaving(false); // 🔥 STOP LOADING
+  //     setSaving(false); // STOP LOADING
   //   }
   // };
 
   const handleSave = async () => {
-    if (saving) return; // ✅ prevent double click
+    if (saving) return; // prevent double click
 
     setShowCreateError(false);
     setErrorMessage('');
 
-    // ✅ VALIDATIONS
+    // VALIDATIONS
     if (!floorName.trim()) {
       setErrorMessage('Floor name is required.');
       setShowCreateError(true);
@@ -495,7 +493,7 @@ export default function CreateFloor() {
       return;
     }
 
-    // ✅ PAYLOAD
+    // PAYLOAD
     const processorsPayload = selectedProcessors.map(proc => ({
       processor_id: proc.id,
       area_ids: processorAreaMap[proc.id] || []
@@ -511,11 +509,11 @@ export default function CreateFloor() {
     formData.append('floor_plan', floorDocument);
 
     try {
-      setSaving(true); // 🔥 ONLY Save controls this
+      setSaving(true); // Save controls this
 
-      await dispatch(createFloorWithAreas(formData)).unwrap(); // ✅ KEY
+      await dispatch(createFloorWithAreas(formData)).unwrap(); // key call
 
-      // ✅ SUCCESS
+      // SUCCESS
       setShowCreateSuccess(true);
 
       setFloorName('');
@@ -536,12 +534,12 @@ export default function CreateFloor() {
       }, 1500);
 
     } catch (error) {
-      // ❌ unwrap error
+      // unwrap error
       setErrorMessage(renderErrorMessage(error));
       setShowCreateError(true);
 
     } finally {
-      setSaving(false); // 🔥 ALWAYS stop
+      setSaving(false); // always stop
     }
   };
 
@@ -972,10 +970,30 @@ export default function CreateFloor() {
         open={showUploadFailure}
         autoHideDuration={3000}
         onClose={() => setShowUploadFailure(false)}
-        message="Failed to upload area coordinates. Please try again."
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        severity="error"
-      />
+      >
+        <Alert
+          onClose={() => setShowUploadFailure(false)}
+          severity="error"
+          sx={{
+            backgroundColor: '#fff',
+            color: '#000',
+            border: '1px solid #f44336',
+            borderRadius: '8px',
+            '& .MuiAlert-icon': {
+              color: '#f44336',
+            },
+            '& .MuiAlert-message': {
+              color: '#000',
+            },
+            '& .MuiAlert-action': {
+              color: '#000',
+            }
+          }}
+        >
+          Failed to upload area coordinates. Please try again.
+        </Alert>
+      </Snackbar>
 
       <Snackbar
         open={showCreateSuccess}

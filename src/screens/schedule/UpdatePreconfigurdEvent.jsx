@@ -538,7 +538,7 @@ function UpdatePreconfigurdEvent() {
                         color: '#d32f2f', 
                         fontSize: isLargeScreen ? 16 : 14 
                       }}>
-                        ⚠️ Exception Dates:
+                        Exception Dates:
                       </span>
                       <span style={{ 
                         color: '#666', 

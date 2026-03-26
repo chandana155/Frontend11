@@ -352,7 +352,7 @@ export default function ScheduleFormPanel({
                   color: '#d32f2f', 
                   fontSize: 14 
                 }}>
-                  ⚠️ Exception Dates:
+                  Exception Dates:
                 </span>
                 <span style={{ 
                   color: '#666', 

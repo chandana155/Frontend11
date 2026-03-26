@@ -112,7 +112,7 @@ const ActivityReportTable = ({ rows = [], loading = false, error = "", selectedA
                     borderRadius: 1
                 }}>
                     <Typography variant="body2" sx={{ color: '#f44336', fontWeight: 500 }}>
-                        ⚠️ Activity of type User, QuickControl, Schedule & AreaGroup can't be filtered by area.
+                        Activity of type User, QuickControl, Schedule & AreaGroup can't be filtered by area.
                     </Typography>
                 </Box>
             )}

@@ -523,7 +523,7 @@ export default function AreaSettingsDialog({ open, onClose, areaId, canUpdateAre
       // CRITICAL: Verify we're updating the correct zone by zone_id
       // This is a safety check to ensure zone_id matches
       if (zoneValues.zone_id && zoneValues.zone_id !== zoneId) {
-        console.error('❌ CRITICAL ERROR: Zone ID mismatch!', {
+        console.error('CRITICAL ERROR: Zone ID mismatch!', {
           expected_zone_id: zoneId,
           found_zone_id: zoneValues.zone_id,
           expected_zone_name: d.zone_name,
@@ -535,7 +535,7 @@ export default function AreaSettingsDialog({ open, onClose, areaId, canUpdateAre
       
       // CRITICAL: Verify zone_name matches as well (additional safety check)
       if (zoneValues.zone_name && d.zone_name && zoneValues.zone_name !== d.zone_name) {
-        console.warn('⚠️ Zone name mismatch (but zone_id matches):', {
+        console.warn('Zone name mismatch (but zone_id matches):', {
           zone_id: zoneId,
           expected_name: d.zone_name,
           found_name: zoneValues.zone_name
@@ -575,7 +575,7 @@ export default function AreaSettingsDialog({ open, onClose, areaId, canUpdateAre
           DelayTime: zoneValues.delayTime,
           assignment_href: assignmentHref, // CRITICAL: Use original from backend
         };
-        console.log(`✅ Zone "${d.zone_name}" (zone_id: ${zoneId}) update:`, {
+        console.log(`Zone "${d.zone_name}" (zone_id: ${zoneId}) update:`, {
           assignment_href: assignmentHref,
           FadeTime: result.FadeTime,
           DelayTime: result.DelayTime,
@@ -593,7 +593,7 @@ export default function AreaSettingsDialog({ open, onClose, areaId, canUpdateAre
           DelayTime: zoneValues.delayTime,
           assignment_href: assignmentHref, // CRITICAL: Use original from backend
         };
-        console.log(`✅ Zone "${d.zone_name}" (zone_id: ${zoneId}) update:`, {
+        console.log(`Zone "${d.zone_name}" (zone_id: ${zoneId}) update:`, {
           assignment_href: assignmentHref,
           FadeTime: result.FadeTime,
           DelayTime: result.DelayTime,
@@ -631,7 +631,7 @@ export default function AreaSettingsDialog({ open, onClose, areaId, canUpdateAre
         const zoneKey = `zone_${zoneId}`;
         const storedValues = sceneZoneValues[zoneKey];
         if (storedValues) {
-          console.log(`  ✅ Verified: Detail ${idx + 1} matches zone_id ${zoneId} (${storedValues.zone_name})`);
+          console.log(`  Verified: Detail ${idx + 1} matches zone_id ${zoneId} (${storedValues.zone_name})`);
           console.log(`     Stored fadeTime: "${storedValues.fadeTime}" (type: ${typeof storedValues.fadeTime})`);
           console.log(`     Stored delayTime: "${storedValues.delayTime}" (type: ${typeof storedValues.delayTime})`);
           console.log(`     Sending fadeTime: "${d.FadeTime}" (type: ${typeof d.FadeTime})`);
@@ -639,13 +639,13 @@ export default function AreaSettingsDialog({ open, onClose, areaId, canUpdateAre
           
           // Verify values match
           if (String(storedValues.fadeTime) !== String(d.FadeTime)) {
-            console.error(`  ❌ ERROR: fadeTime mismatch! Stored: "${storedValues.fadeTime}", Sending: "${d.FadeTime}"`);
+            console.error(`  ERROR: fadeTime mismatch! Stored: "${storedValues.fadeTime}", Sending: "${d.FadeTime}"`);
           }
           if (String(storedValues.delayTime) !== String(d.DelayTime)) {
-            console.error(`  ❌ ERROR: delayTime mismatch! Stored: "${storedValues.delayTime}", Sending: "${d.DelayTime}"`);
+            console.error(`  ERROR: delayTime mismatch! Stored: "${storedValues.delayTime}", Sending: "${d.DelayTime}"`);
           }
         } else {
-          console.error(`  ❌ ERROR: No stored values found for zone_id ${zoneId}`);
+          console.error(`  ERROR: No stored values found for zone_id ${zoneId}`);
         }
       }
     });
@@ -775,7 +775,7 @@ export default function AreaSettingsDialog({ open, onClose, areaId, canUpdateAre
               const zoneDetail = refreshedSceneStatus.details.find(d => d.zone_id === parseInt(zoneId));
               const zoneName = zoneDetail?.zone_name || `zone_id_${zoneId}`;
               
-              console.error(`❌ MISMATCH for zone "${zoneName}" (zone_id: ${zoneId}):`, {
+              console.error(`MISMATCH for zone "${zoneName}" (zone_id: ${zoneId}):`, {
                 sent: {
                   fadeTime: `"${sentValue.fadeTime}" (normalized: "${sentFade}")`,
                   delayTime: `"${sentValue.delayTime}" (normalized: "${sentDelay}")`
@@ -799,7 +799,7 @@ export default function AreaSettingsDialog({ open, onClose, areaId, canUpdateAre
                     
                     if (otherSavedFade === sentFade && otherSavedDelay === sentDelay) {
                       const otherZoneDetail = refreshedSceneStatus.details.find(d => d.zone_id === parseInt(otherZoneId));
-                      console.error(`  ⚠️ WARNING: The values we sent for "${zoneName}" appear to be saved on another zone:`, {
+                      console.error(`  WARNING: The values we sent for "${zoneName}" appear to be saved on another zone:`, {
                         otherZone: otherZoneDetail?.zone_name || `zone_id_${otherZoneId}`,
                         otherZoneId: otherZoneId,
                         otherAssignmentHref: otherZoneDetail?.assignment_href,
@@ -810,10 +810,10 @@ export default function AreaSettingsDialog({ open, onClose, areaId, canUpdateAre
                 }
               });
             } else {
-              console.log(`✅ Match for zone_id ${zoneId}:`, savedValue);
+              console.log(`Match for zone_id ${zoneId}:`, savedValue);
             }
           } else {
-            console.warn(`⚠️ Zone ${zoneId} not found in backend response (by zone_id)`);
+            console.warn(`Zone ${zoneId} not found in backend response (by zone_id)`);
           }
         });
         
@@ -827,7 +827,7 @@ export default function AreaSettingsDialog({ open, onClose, areaId, canUpdateAre
             const delayMatch = String(savedValue.delayTime || '').padStart(2, '0') === String(sentValue.delayTime || '').padStart(2, '0');
             
             if (!fadeMatch || !delayMatch) {
-              console.warn(`⚠️ MISMATCH for assignment_href ${assignmentHref}:`, {
+              console.warn(`MISMATCH for assignment_href ${assignmentHref}:`, {
                 sent: sentValue,
                 received: savedValue,
                 fadeMatch,
@@ -854,7 +854,7 @@ export default function AreaSettingsDialog({ open, onClose, areaId, canUpdateAre
                   delayTime: String(d.DelayTime || '00').padStart(2, '0'),
                   assignment_href: d.assignment_href // Update assignment_href if it changed
                 };
-                console.log(`✅ Updated sceneZoneValues for zone ${d.zone_id} with confirmed backend values:`, {
+                console.log(`Updated sceneZoneValues for zone ${d.zone_id} with confirmed backend values:`, {
                   fadeTime: updated[zoneKey].fadeTime,
                   delayTime: updated[zoneKey].delayTime
                 });
